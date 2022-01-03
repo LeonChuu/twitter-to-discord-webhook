@@ -1,6 +1,6 @@
 defmodule Simplehook.MixProject do
   use Mix.Project
-
+  require Logger
   def project do
     [
       app: :twittertest,
