@@ -1,9 +1,9 @@
-defmodule Simplehook.MixProject do
+defmodule TwitterToDiscordWebhook.MixProject do
   use Mix.Project
   require Logger
   def project do
     [
-      app: :twittertest,
+      app: :twittertodiscordwebhook,
       version: "0.1.0",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
@@ -19,8 +19,8 @@ defmodule Simplehook.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {Simplehook,[]},
-      extra_applications: [:logger]
+      mod: {TwitterToDiscordWebhook,[]},
+      extra_applications: [:logger, :httpoison, :poison]
     ]
   end
 
@@ -28,7 +28,8 @@ defmodule Simplehook.MixProject do
   defp deps do
     [
     {:httpoison, "~> 1.8"},
-    {:poison, "~> 5.0"}
+    {:poison, "~> 5.0"},
+    {:bypass, "~> 2.1"}
     ]
   end
 end
