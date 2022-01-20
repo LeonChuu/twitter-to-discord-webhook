@@ -8,6 +8,7 @@ You can run the project building it directly with Mix, or use Docker to build an
 
 The configuration is done by environment variables. 
 
+### Mandatory Variables
 You must specify the following variables. 
 
 TWITTER_IDS: List of Twitter ids of the users whose tweets will be sent to Discord, separated by commas.
@@ -24,6 +25,7 @@ Example: TWITTER_BEARER_TOKEN=AAAAAAAAAAAAAAAAAAAAAMLheAAAAAAA0%2BuSeid%2BULvsea
 
 The following variables are optional and can be used to change program behavior.
 
+### Optional Variables
 POLL_TIME_MS: Time between checks for the newest tweets for the profiles specified in TWITTER_IDS ,in miliseconds . Default is 1800000 (30 minutes.)
 
 LOG_LEVEL: Elixir logging level for the application. "info" will display info and more critical levels (warn, error, critical), "debug" will display debug messages and all of the former. Default is "info".
@@ -47,32 +49,4 @@ The default value is  "has:media -is:retweet -is:quote &tweet.fields=entities"
 
 If you have docker-compose installed, you can just use 
 `docker-compose up -d`
-
-## Configuration:
-
-Configuration is done by environment variables. 
-
-You must specify the following variables  
-
-### Mandatory Variables
-TWITTER_IDS: List of Twitter ids of the users whose tweets will be sent to Discord, separated by commas.
-
-Example: TWITTER_IDS=123455,564523
-
-WEBHOOK_URLS: List of Discord webhooks where the tweets will be sent to, separated by commas.
-
-Example: https://discord.com/api/webhooks/1233/abcde,https://discord.com/api/webhooks/1234/ghji
-
-TWITTER_BEARER_TOKEN: Authentication token for the Twitter API. You can get one at https://developer.twitter.com/en .
-
-Example: TWITTER_BEARER_TOKEN=AAAAAAAAAAAAAAAAAAAAAMLheAAAAAAA-1%2BuSeid%2BULvsea4JtiGRiSDSJSI%3DEUifiRBkKG5E2XzMDjRfl76ZC9Ub0wnz4XsNiRVBChTYbJcE3F
-
-The following variables are optional and can be used to change program behavior.
-
-### Optional Variables
-
-POLL_TIME_MS: Time between checks for the newest tweets for the profiles specified in TWITTER_IDS ,in miliseconds. Default is 1800000 (30 minutes.)
-
-LOG_LEVEL: Elixir logging level for the application. "info" will display info and more critical levels (warn, error, critical), "debug" will display debug messages and all of the former. Default is "info".
-
 
