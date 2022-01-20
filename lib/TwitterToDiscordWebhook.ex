@@ -40,7 +40,6 @@ defmodule TwitterToDiscordWebhook do
         case status_code do
           x when x in 200..299 ->
             responses = post_to_webhook(body, config.webhook_urls)
-            IO.inspect(responses)
             if responses == true, do: :ok, else: :error
           _ ->
             Logger.error("error getting from api: code" <> inspect(status_code))
@@ -65,7 +64,6 @@ defmodule TwitterToDiscordWebhook do
 
     encoded_url = URI.encode(url)
     headers  = ["Authorization": "Bearer " <> token]
-    IO.inspect(encoded_url)
     HTTPoison.get(encoded_url, headers)
   end
 
@@ -120,7 +118,7 @@ defmodule TwitterToDiscordWebhook do
 
     Logger.info("current logging level:" <> inspect(Logger.level()))
     initial_datetime = DateTime.now!("Etc/UTC")
-    #{:ok, initial_datetime, _} = DateTime.from_iso8601("2022-01-14T20:00:00Z")
+    # {:ok, initial_datetime, _} = DateTime.from_iso8601("2022-01-14T20:00:00Z")
 
     HTTPoison.start()
     config = BotConfig.initialize()
@@ -137,7 +135,7 @@ defmodule TwitterToDiscordWebhook do
       :timer.sleep(10000)
       Enum.map(config.twitter_ids,
       fn (id) ->
-            url_base = "https://api.twitter.com/2/tweets/search/recent?query=from:" <> id <>" has:media -is:retweet -is:quote &tweet.fields=entities"
+            url_base = "https://api.twitter.com/2/tweets/search/recent?query=from:" <> id <> " " <> config.base_query
             supervisor.async(pid, fn -> listen(config, url_base, DateTime.to_iso8601(initial_datetime))
           end)
         end)

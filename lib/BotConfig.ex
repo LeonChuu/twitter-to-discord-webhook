@@ -1,10 +1,12 @@
 require Logger
 defmodule BotConfig do
-  defstruct poll_time_ms: 1800000, twitter_ids: [], webhook_urls: [], twitter_bearer_token: nil
+  @default_base_query "has:media -is:retweet -is:quote &tweet.fields=entities"
+  @default_poll_time "1800000"
+  defstruct poll_time_ms: String.to_integer(@default_poll_time), twitter_ids: [], webhook_urls: [], twitter_bearer_token: nil, base_query: @default_base_query
 
-  def new(twitter_ids, webhook_urls, poll_time_ms, twitter_bearer_token) do
+  def new(twitter_ids, webhook_urls, poll_time_ms, twitter_bearer_token, base_query) do
 
-    %BotConfig{twitter_ids: twitter_ids, webhook_urls: webhook_urls, poll_time_ms: poll_time_ms, twitter_bearer_token: twitter_bearer_token}
+    %BotConfig{twitter_ids: twitter_ids, webhook_urls: webhook_urls, poll_time_ms: poll_time_ms, twitter_bearer_token: twitter_bearer_token, base_query: base_query}
   end
 
   def initialize() do
@@ -31,7 +33,8 @@ defmodule BotConfig do
       raise "Set the TWITTER_BEARER_TOKEN environment_variable"
     end
 
-    BotConfig.new(twitter_ids, webhook_urls, String.to_integer(System.get_env("POLL_TIME_MS","1800000")), twitter_bearer_token)
+    BotConfig.new(twitter_ids, webhook_urls, String.to_integer(System.get_env("POLL_TIME_MS",@default_poll_time)),
+      twitter_bearer_token, System.get_env("BASE_TWITTER_QUERY",@default_base_query))
   end
 
 end

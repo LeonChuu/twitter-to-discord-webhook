@@ -1,0 +1,14 @@
+version: "3"
+services:
+  twitter_to_webhook_listener:
+    build:
+      context: ./
+    container_name: "twitter_to_webhook_listener" 
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+#   env:
+#     - "TWITTER_IDS="
+#     - "WEBHOOK_URLS="
+#     - "TWITTER_BEARER_TOKEN="
