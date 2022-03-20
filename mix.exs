@@ -10,7 +10,7 @@ defmodule TwitterToDiscordWebhook.MixProject do
       deps: deps(),
       releases: [
         release: [
-          include_erts: false
+          include_erts: true
         ]
       ]
     ]
