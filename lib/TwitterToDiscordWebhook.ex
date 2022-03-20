@@ -25,9 +25,10 @@ defmodule TwitterToDiscordWebhook do
 
   def listen(config, url_base, current_date \\ nil) do
 
+    datetime = DateTime.to_iso8601(DateTime.now!("Etc/UTC"))
     process(config, url_base, current_date)
     :timer.sleep(config.poll_time_ms)
-    listen(config, url_base, DateTime.to_iso8601(DateTime.now!("Etc/UTC")))
+    listen(config, url_base, datetime)
   end
 
   def process(config, url_base, current_date \\ nil) do
