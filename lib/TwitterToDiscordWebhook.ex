@@ -26,9 +26,12 @@ defmodule TwitterToDiscordWebhook do
   def listen(config, url_base, current_date \\ nil) do
 
     datetime = DateTime.to_iso8601(DateTime.now!("Etc/UTC"))
-    process(config, url_base, current_date)
+    status = process(config, url_base, current_date)
     :timer.sleep(config.poll_time_ms)
-    listen(config, url_base, datetime)
+    case status do
+      :ok -> listen(config, url_base, datetime)
+      :error -> listen(config, url_base, current_date)
+    end
   end
 
   def process(config, url_base, current_date \\ nil) do
@@ -40,8 +43,7 @@ defmodule TwitterToDiscordWebhook do
       {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
         case status_code do
           x when x in 200..299 ->
-            responses = post_to_webhook(body, config.webhook_urls)
-            if responses == true, do: :ok, else: :error
+            post_to_webhook(body, config.webhook_urls)
           _ ->
             Logger.error("error getting from api: code" <> inspect(status_code))
             :error
@@ -69,38 +71,45 @@ defmodule TwitterToDiscordWebhook do
   end
 
   defp post_to_webhook(body, webhook_urls)  do
-        #each tweet in the period will be in a "data" field.
-    with %{"data" => data} <- Poison.decode!(body), do:
-    Enum.any?(Enum.map(data, fn (datum) ->
-      with %{"entities" => %{"urls" => urls}} <- datum,
+    Logger.debug("posting to webhooks.")
+    #each tweet in the period will be in a "data" field.
+    result_status = with %{"data" => data} <- Poison.decode!(body), do:
+      Enum.any?(Enum.map(data, fn (datum) ->
+      with %{"entities" => %{"urls" => urls}} <- datum, do:
       #Each tweet can have multiple urls in its "content" field.
-      do:
-      Enum.any?(Enum.map(urls, fn url ->
+        Enum.any?(Enum.map(urls, fn url ->
         content = Poison.encode!(%{"content" => url["expanded_url"]})
+        Logger.debug("expanded_url:" <> inspect(content))
         # to avoid rate limiting
         :timer.sleep(1000)
 
         #We post each tweet's content urls to every webhook.
         response_status = Enum.map(webhook_urls, fn webhook_url ->
-          response = HTTPoison.post!(webhook_url, content , ["Content-Type": "application/json"])
-          Logger.debug(inspect(response))
-          case response do
-            %HTTPoison.Response{status_code: status_code, body: body} ->
-              case status_code do
-                x when x in 200..299 -> true
+          {status, response} = HTTPoison.post(webhook_url, content , ["Content-Type": "application/json"])
+          #checking for request success first, status code later.
+          case status do
+            :ok ->
+              Logger.debug(inspect(response))
+              case response do
+                %HTTPoison.Response{status_code: status_code, body: body} ->
+                  case status_code do
+                    x when x in 200..299 -> true
+                    _ ->
+                      Logger.error("Error posting to webhook " <> inspect(body))
+                      false
+                  end
                 _ ->
-                  Logger.error("Error posting to webhook " <> inspect(body))
+                  Logger.error("Error posting to webhook.")
                   false
               end
-            _ ->
-              Logger.error("Error posting to webhook.")
-              false
+            :error -> false
           end
 
         end)
         Enum.any?(response_status)
       end))
     end))
+    if result_status == true, do: :ok, else: :error
   end
 
   def send_initialization_message(config) do
@@ -119,7 +128,7 @@ defmodule TwitterToDiscordWebhook do
 
     Logger.info("current logging level:" <> inspect(Logger.level()))
     initial_datetime = DateTime.now!("Etc/UTC")
-    # {:ok, initial_datetime, _} = DateTime.from_iso8601("2022-01-14T20:00:00Z")
+    {:ok, initial_datetime, _} = DateTime.from_iso8601("2022-08-10T00:00:00Z")
 
     HTTPoison.start()
     config = BotConfig.initialize()
@@ -127,13 +136,14 @@ defmodule TwitterToDiscordWebhook do
 
     supervisor = Task.Supervisor
     {:ok, pid} = supervisor.start_link()
-    Logger.info("Starting listens.")
+    Logger.info("Starting application.")
     children = [
     {Task, fn ->
 
       Logger.info("waiting for twitter's latest tweets time limit(10s)")
       #twitter requires prior time to be at least 10 seconds.
       :timer.sleep(10000)
+      Logger.info("starting listeners:")
       Enum.map(config.twitter_ids,
       fn (id) ->
             url_base = "https://api.twitter.com/2/tweets/search/recent?query=from:" <> id <> " " <> config.base_query

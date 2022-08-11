@@ -18,7 +18,7 @@ defmodule TwitterToDiscordWebhookTest do
       Plug.Conn.resp(conn, 200, "{}")
     end)
     test_id=["test"]
-    config = BotConfig.new(test_id,test_hook,10000,"testtoken")
+    config = BotConfig.new(test_id,test_hook,10000,"testtoken", nil)
     IO.inspect(config)
     resp = TwitterToDiscordWebhook.process(config,"127.0.0.1:#{bypass.port}")
     IO.inspect("resp")
@@ -35,7 +35,7 @@ defmodule TwitterToDiscordWebhookTest do
     end)
 
     test_id=["test"]
-    config = BotConfig.new(test_id,test_hook,10000,"testtoken")
+    config = BotConfig.new(test_id,test_hook,10000,"testtoken", nil)
     IO.inspect(config)
     assert TwitterToDiscordWebhook.process(config,"127.0.0.1:#{bypass.port}") == :error
   end
@@ -52,7 +52,7 @@ defmodule TwitterToDiscordWebhookTest do
       Plug.Conn.resp(conn, 400, "{}")
     end)
     test_id=["test"]
-    config = BotConfig.new(test_id,test_hook,10000,"testtoken")
+    config = BotConfig.new(test_id,test_hook,10000,"testtoken", nil)
     IO.inspect(config)
     assert TwitterToDiscordWebhook.process(config,"127.0.0.1:#{bypass.port}") == :error
   end
