@@ -39,7 +39,7 @@ The default value is  "has:media -is:retweet -is:quote &tweet.fields=entities"
 `mix compile`
 ### Running:
 
-`mix start --no-halt`
+`mix run --no-halt`
 
 ### Testing:
 
