@@ -43,7 +43,7 @@ defmodule TwitterToDiscordWebhook do
       {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
         case status_code do
           x when x in 200..299 ->
-            post_to_webhook(body, config.webhook_urls)
+            post_to_webhooks(body, config.webhook_urls)
           _ ->
             Logger.error("error getting from api: code" <> inspect(status_code))
             :error
@@ -70,44 +70,49 @@ defmodule TwitterToDiscordWebhook do
     HTTPoison.get(encoded_url, headers)
   end
 
-  defp post_to_webhook(body, webhook_urls)  do
+  defp post_to_webhook(content, webhook_url) do
+    {status, response} = HTTPoison.post(webhook_url, content , ["Content-Type": "application/json"])
+      #checking for request success first, status code later.
+    case status do
+      :ok ->
+        Logger.debug(inspect(response))
+        case response do
+          %HTTPoison.Response{status_code: status_code, body: body} ->
+            case status_code do
+              x when x in 200..299 -> true
+              _ ->
+                Logger.error("Error posting to webhook " <> inspect(body))
+                false
+            end
+          _ ->
+            Logger.error("Error posting to webhook.")
+            false
+        end
+      :error -> false
+    end
+  end
+
+  defp post_to_webhooks(body, webhook_urls)  do
     Logger.debug("posting to webhooks.")
     #each tweet in the period will be in a "data" field.
     result_status = with %{"data" => data} <- Poison.decode!(body), do:
       Enum.any?(Enum.map(data, fn (datum) ->
-      with %{"entities" => %{"urls" => urls}} <- datum, do:
-      #Each tweet can have multiple urls in its "content" field.
-        Enum.any?(Enum.map(urls, fn url ->
-        content = Poison.encode!(%{"content" => url["expanded_url"]})
-        Logger.debug("expanded_url:" <> inspect(content))
-        # to avoid rate limiting
-        :timer.sleep(1000)
+      with %{"entities" => %{"urls" => urls}} <- datum do
 
-        #We post each tweet's content urls to every webhook.
-        response_status = Enum.map(webhook_urls, fn webhook_url ->
-          {status, response} = HTTPoison.post(webhook_url, content , ["Content-Type": "application/json"])
-          #checking for request success first, status code later.
-          case status do
-            :ok ->
-              Logger.debug(inspect(response))
-              case response do
-                %HTTPoison.Response{status_code: status_code, body: body} ->
-                  case status_code do
-                    x when x in 200..299 -> true
-                    _ ->
-                      Logger.error("Error posting to webhook " <> inspect(body))
-                      false
-                  end
-                _ ->
-                  Logger.error("Error posting to webhook.")
-                  false
-              end
-            :error -> false
-          end
+        if(Enum.empty?(urls)) do
+          false
+        else
+          url = Enum.at(urls, 0)
+          content = Poison.encode!(%{"content" => url["expanded_url"]})
+          Logger.debug("expanded_url:" <> inspect(content))
+          # to avoid rate limiting
+          :timer.sleep(1000)
 
-        end)
-        Enum.any?(response_status)
-      end))
+          #We post each tweet's content urls to each webhook.
+          response_status = Enum.map(webhook_urls, fn webhook_url -> post_to_webhook(content, webhook_url ) end)
+          Enum.any?(response_status)
+        end
+      end
     end))
     if result_status == true, do: :ok, else: :error
   end
@@ -128,7 +133,7 @@ defmodule TwitterToDiscordWebhook do
 
     Logger.info("current logging level:" <> inspect(Logger.level()))
     initial_datetime = DateTime.now!("Etc/UTC")
-    {:ok, initial_datetime, _} = DateTime.from_iso8601("2022-08-10T00:00:00Z")
+    #{:ok, initial_datetime, _} = DateTime.from_iso8601("2022-08-10T00:00:00Z")
 
     HTTPoison.start()
     config = BotConfig.initialize()
