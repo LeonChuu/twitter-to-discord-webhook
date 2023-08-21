@@ -29,7 +29,9 @@ defmodule TwitterToDiscordWebhook.MixProject do
     [
     {:httpoison, "~> 1.8"},
     {:poison, "~> 5.0"},
-    {:bypass, "~> 2.1"}
+    {:bypass, "~> 2.1"},
+		{:oauth2, "~> 2.0"},
+    {:hackney, "~> 1.18"}
     ]
   end
 end

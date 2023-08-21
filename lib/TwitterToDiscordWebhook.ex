@@ -119,7 +119,7 @@ defmodule TwitterToDiscordWebhook do
 
   def send_initialization_message(config) do
     Enum.each(config.webhook_urls, fn webhook_url ->
-      HTTPoison.post!(webhook_url, Poison.encode!(%{"content" => "Ooee has awoken."}) , ["Content-Type": "application/json"])
+      HTTPoison.post!(webhook_url, Poison.encode!(%{"content" => "Ooee has awoken again."}) , ["Content-Type": "application/json"])
     end)
   end
 
@@ -138,6 +138,19 @@ defmodule TwitterToDiscordWebhook do
     HTTPoison.start()
     config = BotConfig.initialize()
     send_initialization_message(config)
+
+    client = OAuth2.Client.new([
+      strategy: OAuth2.Strategy.AuthCode, #default
+      client_id: config.client_id,
+      client_secret: config.client_secret,
+      site: config.auth_url,
+      redirect_uri: config.redirect_uri
+    ])
+    OAuth2.Client.authorize_url!(client)
+    client = OAuth2.Client.get_token!(client, code: "someauthcode")
+    resource = OAuth2.Client.get!(client, "/api/resource").body
+
+
 
     supervisor = Task.Supervisor
     {:ok, pid} = supervisor.start_link()
