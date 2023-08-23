@@ -1,37 +1,21 @@
-defmodule TwitterToDiscordWebhook.MixProject do
+defmodule KvUmbrella.MixProject do
   use Mix.Project
-  require Logger
+
   def project do
     [
-      app: :twittertodiscordwebhook,
+      apps_path: "apps",
       version: "0.1.0",
-      elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
-      releases: [
-        release: [
-          include_erts: true
-        ]
-      ]
+      deps: deps()
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
-  def application do
-    [
-      mod: {TwitterToDiscordWebhook,[]},
-      extra_applications: [:logger, :httpoison, :poison]
-    ]
-  end
-
-  # Run "mix help deps" to learn about dependencies.
+  # Dependencies listed here are available only for this
+  # project and cannot be accessed from applications inside
+  # the apps folder.
+  #
+  # Run "mix help deps" for examples and options.
   defp deps do
-    [
-    {:httpoison, "~> 1.8"},
-    {:poison, "~> 5.0"},
-    {:bypass, "~> 2.1"},
-		{:oauth2, "~> 2.0"},
-    {:hackney, "~> 1.18"}
-    ]
+    []
   end
 end

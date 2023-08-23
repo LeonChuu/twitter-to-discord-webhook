@@ -1,0 +1,10 @@
+{application,twittertodiscordwebhook,
+             [{applications,[kernel,stdlib,elixir,logger,httpoison,poison,
+                             bypass,oauth2,hackney,plug_cowboy]},
+              {description,"twittertodiscordwebhook"},
+              {modules,['Elixir.BotConfig','Elixir.SimplePlugRest',
+                        'Elixir.SimplePlugRest.Application',
+                        'Elixir.TwitterToDiscordWebhook']},
+              {registered,[]},
+              {vsn,"0.1.0"},
+              {mod,{'Elixir.TwitterToDiscordWebhook',[]}}]}.
