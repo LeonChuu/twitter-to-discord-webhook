@@ -142,7 +142,28 @@ defmodule TwitterToDiscordWebhook do
 
     # resource = OAuth2.Client.get!(client, "/api/resource").body
 
+    client = OAuth2.Client.new([
+      authorize_url: "/oauth2/authorize",
+      strategy: OAuth2.Strategy.AuthCode, #default
+      client_id: config.client_id,
+      client_secret: config.client_secret,
+      site: config.auth_url,
+      redirect_uri: config.redirect_uri
 
+    ])
+    challenge = :crypto.hash(:sha256, config.client_secret)
+    |> Base.encode64()
+    |> String.replace("\+","-")
+    |> String.replace("\/","_")
+    |> String.replace_trailing("=","")
+    Logger.info(OAuth2.Client.authorize_url!(client,
+     scope: "tweet.read users.read offline.access",
+     code_challenge: challenge,
+     code_challenge_method: "S256",
+     #code_challenge: "challenge",
+     #code_challenge_method: "plain",
+     state: "randommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+     response_type: "code"))
 
     supervisor = Task.Supervisor
     {:ok, pid} = supervisor.start_link()
