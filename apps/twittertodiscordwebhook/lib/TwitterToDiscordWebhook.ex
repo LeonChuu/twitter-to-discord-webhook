@@ -1,6 +1,7 @@
 defmodule TwitterToDiscordWebhook do
   use Application
   require Logger
+  require Process
   @moduledoc """
   Documentation for Simplehook.
   """
@@ -13,34 +14,36 @@ defmodule TwitterToDiscordWebhook do
               :webhook_urls => any,
               optional(any) => any
             },
+          OAuth2.Client,
           binary,
           any
         ) :: no_return
   @doc """
-  Hello world.
+  Listener.
 
 
   """
 
 
-  def listen(config, url_base, current_date \\ nil) do
+  def listen(config, url_base, client, current_date \\ nil) do
 
-    datetime = DateTime.to_iso8601(DateTime.now!("Etc/UTC"))
-    status = process(config, url_base, current_date)
+    #datetime = DateTime.to_iso8601(DateTime.now!("Etc/UTC"))
+    datetime = DateTime.to_iso8601(DateTime.add(DateTime.now!("Etc/UTC"),20, :hour))
+    status = process(config, url_base, client, current_date)
     :timer.sleep(config.poll_time_ms)
     case status do
-      :ok -> listen(config, url_base, datetime)
-      :error -> listen(config, url_base, current_date)
+      :ok -> listen(config, url_base, client, datetime)
+      :error -> listen(config, url_base, client, current_date)
     end
   end
 
-  def process(config, url_base, current_date \\ nil) do
+  def process(config, url_base, client, current_date \\ nil) do
 
-    response = get_tweets(config.twitter_bearer_token, url_base, current_date)
+    response = get_tweets(config.twitter_bearer_token, url_base, client, current_date)
     Logger.debug(inspect(response))
 
     case response do
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
+      {:ok, %OAuth2.Response{status_code: status_code, body: body}} ->
         case status_code do
           x when x in 200..299 ->
             post_to_webhooks(body, config.webhook_urls)
@@ -55,7 +58,7 @@ defmodule TwitterToDiscordWebhook do
 
   end
 
-  defp get_tweets(token, url_base, current_date) do
+  defp get_tweets(token, url_base, client, current_date) do
     url = if current_date != nil do
       url_base <> "&start_time=" <> current_date
     else
@@ -66,8 +69,7 @@ defmodule TwitterToDiscordWebhook do
     Logger.debug("date:" <> inspect(current_date))
 
     encoded_url = URI.encode(url)
-    headers  = ["Authorization": "Bearer " <> token]
-    HTTPoison.get(encoded_url, headers)
+    OAuth2.Client.get(client, encoded_url)
   end
 
   defp post_to_webhook(content, webhook_url) do
@@ -126,6 +128,8 @@ defmodule TwitterToDiscordWebhook do
 
   def start(_start_type, _start_args) do
 
+    Process.register(self(), :main)
+
     case System.get_env("LOG_LEVEL") do
       nil -> Logger.configure(level: :info)
       x -> Logger.configure(level: String.to_atom(x))
@@ -148,14 +152,18 @@ defmodule TwitterToDiscordWebhook do
       client_id: config.client_id,
       client_secret: config.client_secret,
       site: config.auth_url,
-      redirect_uri: config.redirect_uri
-
+      redirect_uri: config.redirect_uri,
+      token_url: "/oauth2/token"
     ])
+    OAuth2.Client.put_serializer(client, "application/json", Jason)
+
+
     challenge = :crypto.hash(:sha256, config.client_secret)
     |> Base.encode64()
     |> String.replace("\+","-")
     |> String.replace("\/","_")
     |> String.replace_trailing("=","")
+
     Logger.info(OAuth2.Client.authorize_url!(client,
      scope: "tweet.read users.read offline.access",
      code_challenge: challenge,
@@ -164,6 +172,17 @@ defmodule TwitterToDiscordWebhook do
      #code_challenge_method: "plain",
      state: "randommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
      response_type: "code"))
+
+     Logger.info("Waiting for login.")
+
+     code = receive do
+      {:code, value} -> value
+     end
+
+    # TODO implement custom strategy for this.
+    client = OAuth2.Client.get_token!(client, code: code,code_verifier: config.client_secret)
+    Logger.info(client)
+
 
     supervisor = Task.Supervisor
     {:ok, pid} = supervisor.start_link()
@@ -178,7 +197,7 @@ defmodule TwitterToDiscordWebhook do
       Enum.map(config.twitter_ids,
       fn (id) ->
             url_base = "https://api.twitter.com/2/tweets/search/recent?query=from:" <> id <> " " <> config.base_query
-            supervisor.async(pid, fn -> listen(config, url_base, DateTime.to_iso8601(initial_datetime))
+            supervisor.async(pid, fn -> listen(config, url_base, client, DateTime.to_iso8601(initial_datetime))
           end)
         end)
       end}

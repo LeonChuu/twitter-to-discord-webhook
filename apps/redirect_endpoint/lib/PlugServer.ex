@@ -15,19 +15,12 @@ defmodule SimplePlugRest do
   """
   @spec call(Plug.Conn.t(), any) :: Plug.Conn.t()
   def call(conn, opts) do
+    send(:main, {:code, fetch_query_params(conn).query_params["code"]})
     conn
     |> put_resp_content_type("text/plain")
+    #|> send_resp(200,"accepted")
     |> send_resp(200, Kernel.inspect(fetch_query_params(conn).query_params))
+
+
   end
 end
-"""
-    client = OAuth2.Client.new([
-      strategy: OAuth2.Strategy.AuthCode, #default
-      client_id: config.client_id,
-      client_secret: config.client_secret,
-      site: config.auth_url,
-      redirect_uri: config.redirect_uri
-    ])
-    OAuth2.Client.authorize_url!(client)
-    client = OAuth2.Client.get_token!(client, code: "someauthcode")
-"""
