@@ -164,13 +164,19 @@ defmodule TwitterToDiscordWebhook do
     |> String.replace("\/","_")
     |> String.replace_trailing("=","")
 
+    state = :crypto.hash(:sha256, :crypto.strong_rand_bytes(80))
+    |> Base.encode64()
+    |> String.replace("\+","-")
+    |> String.replace("\/","_")
+    |> String.replace_trailing("=","")
+
     Logger.info(OAuth2.Client.authorize_url!(client,
      scope: "tweet.read users.read offline.access",
      code_challenge: challenge,
      code_challenge_method: "S256",
      #code_challenge: "challenge",
      #code_challenge_method: "plain",
-     state: "randommmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+     state: state,
      response_type: "code"))
 
      Logger.info("Waiting for login.")
