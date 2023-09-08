@@ -125,6 +125,13 @@ defmodule TwitterToDiscordWebhook do
     end)
   end
 
+  def gen_url_safe_hash(input_string) do
+    :crypto.hash(:sha256, input_string)
+    |> Base.encode64()
+    |> String.replace("\+","-")
+    |> String.replace("\/","_")
+    |> String.replace_trailing("=","")
+  end
 
   def start(_start_type, _start_args) do
 
@@ -157,18 +164,8 @@ defmodule TwitterToDiscordWebhook do
     ])
     OAuth2.Client.put_serializer(client, "application/json", Jason)
 
-
-    challenge = :crypto.hash(:sha256, config.client_secret)
-    |> Base.encode64()
-    |> String.replace("\+","-")
-    |> String.replace("\/","_")
-    |> String.replace_trailing("=","")
-
-    state = :crypto.hash(:sha256, :crypto.strong_rand_bytes(80))
-    |> Base.encode64()
-    |> String.replace("\+","-")
-    |> String.replace("\/","_")
-    |> String.replace_trailing("=","")
+    challenge = gen_url_safe_hash(config.client_secret)
+    state = gen_url_safe_hash(:crypto.strong_rand_bytes(80))
 
     Logger.info(OAuth2.Client.authorize_url!(client,
      scope: "tweet.read users.read offline.access",
@@ -214,7 +211,7 @@ defmodule TwitterToDiscordWebhook do
       Logger.info("starting listeners:")
       Enum.map(config.twitter_ids,
       fn (id) ->
-            url_base = "https://api.twitter.com/2/tweets/search/recent?query=from:" <> id <> " " <> config.base_query
+            url_base = config.token_url <>"/tweets/search/recent?query=from:" <> id <> " " <> config.base_query
             supervisor.async(pid, fn -> listen(config, url_base, client, DateTime.to_iso8601(initial_datetime))
           end)
         end)
