@@ -39,7 +39,7 @@ defmodule TwitterToDiscordWebhook do
 
   def process(config, url_base, client, current_date \\ nil) do
 
-    response = get_tweets(config.twitter_bearer_token, url_base, client, current_date)
+    response = get_tweets(url_base, client, current_date)
     Logger.debug(inspect(response))
 
     case response do
@@ -58,7 +58,7 @@ defmodule TwitterToDiscordWebhook do
 
   end
 
-  defp get_tweets(token, url_base, client, current_date) do
+  defp get_tweets(url_base, client, current_date) do
     url = if current_date != nil do
       url_base <> "&start_time=" <> current_date
     else
@@ -148,7 +148,7 @@ defmodule TwitterToDiscordWebhook do
 
     client = OAuth2.Client.new([
       authorize_url: "/oauth2/authorize",
-      strategy: OAuth2.Strategy.AuthCode, #default
+      strategy: OAuth2.Strategy.AuthCode,
       client_id: config.client_id,
       client_secret: config.client_secret,
       site: config.auth_url,
@@ -179,8 +179,20 @@ defmodule TwitterToDiscordWebhook do
       {:code, value} -> value
      end
 
+    client = OAuth2.Client.new([
+      authorize_url: "/oauth2/authorize",
+      strategy: OAuth2.Strategy.AuthCode,
+      client_id: config.client_id,
+      client_secret: config.client_secret,
+      site: config.token_url,
+      redirect_uri: config.redirect_uri,
+      token_url: "/oauth2/token",
+
+    ])
+
     # TODO implement custom strategy for this.
     client = OAuth2.Client.get_token!(client, code: code,code_verifier: config.client_secret)
+
     Logger.info(client)
 
 

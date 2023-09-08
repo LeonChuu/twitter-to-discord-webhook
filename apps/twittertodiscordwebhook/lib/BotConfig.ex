@@ -4,7 +4,7 @@ defmodule BotConfig do
   @default_poll_time "1800000"
   @default_redirect_uri "http://localhost:5000/auth/callback"
   @default_auth_url "https://twitter.com/i"
-  @default_token_url "https://api.twitter.com/2/oauth2/token"
+  @default_token_url "https://api.twitter.com/2"
   defstruct poll_time_ms: String.to_integer(@default_poll_time), twitter_ids: [], webhook_urls: [], twitter_bearer_token: nil, base_query: @default_base_query,
   client_id: nil, client_secret: nil, redirect_uri: @default_redirect_uri,
   auth_url: @default_auth_url, token_url: @default_token_url
